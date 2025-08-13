@@ -21,7 +21,6 @@ export class SearchFlightService {
         const passengerBreakup = flight?.Price?.PassengerBreakup ?? {};
         const attributes = flight?.Attr ?? {};
 
-        
         const redisToken = uuidv4();
 
         return {
@@ -74,10 +73,8 @@ export class SearchFlightService {
             },
           },
 
-          
           redisToken,
 
-          
           apiResultToken: flight.ResultToken ?? null,
 
           Attr: {
@@ -107,10 +104,40 @@ export class SearchFlightService {
   }
 
   async searchFlights(payload: any) {
+    let apiPayload = payload;
+
+    // 💡 HERE IS THE UPDATED ROUND-TRIP LOGIC
+    // It checks if the request is a 'Return' trip and only has one segment.
+    if (payload.JourneyType === 'Return' && payload.Segments.length === 1) {
+      const outboundSegment = payload.Segments[0];
+      // It verifies that a 'ReturnDate' exists in the single segment.
+      if (outboundSegment.ReturnDate) {
+        // It creates a new segment for the return journey, inverting origin/destination.
+        const returnSegment = {
+          Origin: outboundSegment.Destination,
+          Destination: outboundSegment.Origin,
+          DepartureDate: outboundSegment.ReturnDate,
+        };
+
+        // It then creates a new payload with two segments.
+        apiPayload = {
+          ...payload,
+          Segments: [
+            {
+              Origin: outboundSegment.Origin,
+              Destination: outboundSegment.Destination,
+              DepartureDate: outboundSegment.DepartureDate,
+            },
+            returnSegment,
+          ],
+        };
+      }
+    }
+
     const apiResp = await firstValueFrom(
       this.http.post(
         'http://test.services.travelomatix.com/webservices/index.php/flight/service/Search',
-        payload,
+        apiPayload, // The transformed payload is used here
         {
           headers: {
             'Content-Type': 'application/json',
@@ -130,7 +157,6 @@ export class SearchFlightService {
 
     const ttlMilliseconds = 3600 * 1000; 
 
-    
     for (const flight of journeyList) {
       if (flight.redisToken) {
         await this.cacheManager.set(flight.redisToken, flight, ttlMilliseconds);

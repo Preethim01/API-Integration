@@ -13,59 +13,56 @@ export class CommitBookingService {
       throw new InternalServerErrorException('Invalid response format from provider.');
     }
 
+    const firstFlightSegment = bookingDetails.JourneyList.FlightDetails.Details[0][0];
+    const passenger = bookingDetails.PassengerDetails[0];
+    const priceBreakup = bookingDetails.Price.PriceBreakup;
+
     return {
-      Status: rawResponse?.Status ?? 0,
-      Message: rawResponse?.Message ?? '',
-      CommitBooking: {
-        BookingDetails: {
-          BookingId: bookingDetails?.BookingId ?? null,
-          PNR: bookingDetails?.PNR ?? null,
-          TicketingTimeLimit: bookingDetails?.TicketingTimeLimit ?? null,
-          PassengerDetails: (bookingDetails?.PassengerDetails ?? []).map(pax => ({
-            PassengerId: pax?.PassengerId ?? null,
-            PassengerType: pax?.PassengerType ?? null,
-            Title: pax?.Title ?? null,
-            FirstName: pax?.FirstName ?? null,
-            LastName: pax?.LastName ?? null,
-            TicketNumber: pax?.TicketNumber ?? null,
-          })),
-          JourneyList: {
-            FlightDetails: {
-              Details: (bookingDetails?.JourneyList?.FlightDetails?.Details ?? []).map(flightArray =>
-                flightArray.map(flight => ({
-                  Origin: {
-                    AirportCode: flight?.Origin?.AirportCode ?? null,
-                    CityName: flight?.Origin?.CityName ?? null,
-                    AirportName: flight?.Origin?.AirportName ?? null,
-                    DateTime: flight?.Origin?.DateTime ?? null,
-                    FDTV: flight?.Origin?.FDTV ?? null,
-                    Terminal: flight?.Origin?.Terminal ?? null,
-                  },
-                  Destination: {
-                    AirportCode: flight?.Destination?.AirportCode ?? null,
-                    CityName: flight?.Destination?.CityName ?? null,
-                    AirportName: flight?.Destination?.AirportName ?? null,
-                    DateTime: flight?.Destination?.DateTime ?? null,
-                    FATV: flight?.Destination?.FATV ?? null,
-                    Terminal: flight?.Destination?.Terminal ?? null,
-                  },
-                  AirlinePNR: flight?.AirlinePNR ?? null,
-                  OperatorCode: flight?.OperatorCode ?? null,
-                  DisplayOperatorCode: flight?.DisplayOperatorCode ?? null,
-                  OperatorName: flight?.OperatorName ?? null,
-                  FlightNumber: flight?.FlightNumber ?? null,
-                  CabinClass: flight?.CabinClass ?? null,
-                  Attr: {
-                    Baggage: flight?.Attr?.Baggage ?? null,
-                    CabinBaggage: flight?.Attr?.CabinBaggage ?? null,
-                    AvailableSeats: flight?.Attr?.AvailableSeats ?? null,
-                  },
-                }))
-              ),
-            },
+      Status: rawResponse.Status,
+      Message: 'Booking confirmed',
+      BookingDetails: {
+        BookingId: bookingDetails.BookingId,
+        PNR: bookingDetails.PNR,
+        TicketingTimeLimit: bookingDetails.TicketingTimeLimit,
+      },
+      Passengers: [
+        {
+          PassengerId: passenger.PassengerId,
+          Title: passenger.Title,
+          FirstName: passenger.FirstName,
+          LastName: passenger.LastName,
+          TicketNumber: passenger.TicketNumber,
+        },
+      ],
+      Flights: [
+        {
+          Origin: {
+            AirportCode: firstFlightSegment.Origin.AirportCode,
+            CityName: firstFlightSegment.Origin.CityName,
+            DateTime: firstFlightSegment.Origin.DateTime,
           },
-          Price: bookingDetails?.Price ?? null,
-          Attr: bookingDetails?.Attr ?? null,
+          Destination: {
+            AirportCode: firstFlightSegment.Destination.AirportCode,
+            CityName: firstFlightSegment.Destination.CityName,
+            DateTime: firstFlightSegment.Destination.DateTime,
+          },
+          Airline: {
+            OperatorCode: firstFlightSegment.OperatorCode,
+            FlightNumber: firstFlightSegment.FlightNumber,
+            PNR: firstFlightSegment.AirlinePNR,
+            CabinClass: firstFlightSegment.CabinClass,
+          },
+          Baggage: {
+            CabinBaggage: firstFlightSegment.Attr.CabinBaggage,
+          },
+        },
+      ],
+      Pricing: {
+        Currency: bookingDetails.Price.Currency,
+        TotalDisplayFare: bookingDetails.Price.TotalDisplayFare,
+        PriceBreakup: {
+          BasicFare: priceBreakup.BasicFare,
+          Tax: priceBreakup.Tax,
         },
       },
     };
@@ -73,8 +70,6 @@ export class CommitBookingService {
 
   async commitBooking(payload: any) {
     try {
-      // The API's request body is the same as your provided payload,
-      // so you can use it directly.
       const bookingApiUrl = 'http://test.services.travelomatix.com/webservices/index.php/flight/service/CommitBooking';
 
       const response = await firstValueFrom(
