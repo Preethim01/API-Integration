@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ApiService } from './api.service';
+import { CommitBookingService } from './commit-booking.service';
 
-describe('ApiService', () => {
-  let service: ApiService;
+describe('CommitBookingService', () => {
+  let service: CommitBookingService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ApiService],
+      providers: [CommitBookingService],
     }).compile();
 
-    service = module.get<ApiService>(ApiService);
+    service = module.get<CommitBookingService>(CommitBookingService);
   });
 
   it('should be defined', () => {
