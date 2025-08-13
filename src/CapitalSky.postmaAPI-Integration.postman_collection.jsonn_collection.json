@@ -1,0 +1,272 @@
+{
+	"info": {
+		"_postman_id": "94e970c1-7916-4edb-ba68-b14df1d88fda",
+		"name": "CapitalSky",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46716046"
+	},
+	"item": [
+		{
+			"name": "Search",
+			"item": [
+				{
+					"name": "search-flight(oneway)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "en-GB,en-US;q=0.9,en;q=0.8"
+							},
+							{
+								"key": "Access-Control-Request-Headers",
+								"value": "content-type"
+							},
+							{
+								"key": "Access-Control-Request-Method",
+								"value": "POST"
+							},
+							{
+								"key": "Connection",
+								"value": "keep-alive"
+							},
+							{
+								"key": "Origin",
+								"value": "http://54.198.46.240"
+							},
+							{
+								"key": "Referer",
+								"value": "http://54.198.46.240/"
+							},
+							{
+								"key": "Sec-Fetch-Mode",
+								"value": "cors"
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"AdultCount\": 1,\n  \"ChildCount\": 0,\n  \"InfantCount\": 0,\n  \"JourneyType\": \"OneWay\",\n  \"PreferredAirlines\": [],\n  \"CabinClass\": \"Economy\",\n  \"Segments\": [\n    {\n      \"Origin\": \"MAA\",\n      \"Destination\": \"LON\",\n      \"DepartureDate\": \"2025-09-09\"\n    }\n  ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/search-flight/search",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"search-flight",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "search-flight/token",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json, text/plain, */*"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "en-GB,en-US;q=0.9,en;q=0.8"
+							},
+							{
+								"key": "Connection",
+								"value": "keep-alive"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Origin",
+								"value": "http://54.198.46.240"
+							},
+							{
+								"key": "Referer",
+								"value": "http://54.198.46.240/"
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"Currency\": \"USD\",\n    \"AppReference\": \"CAPFL20250808241178\",\n    \"booking_source\": \"SAFARI00012\",\n    \"BookingSource\": \"B2C\",\n    \"SequenceNumber\": 0,\n    \"ResultToken\": \"30fe242f6cd641e0e09f35939fa83e42*_*172*_*0RR87pv7GEdpHn51\",\n    \"Passengers\": [\n        {\n            \"IsLeadPax\": 1,\n            \"Title\": \"Ms\",\n            \"FirstName\": \"Preethi\",\n            \"MiddleName\": \"\",\n            \"LastName\": \"M\",\n            \"PaxType\": 1,\n            \"Gender\": \"Female\",\n            \"DateOfBirth\": \"2001-05-27\",\n            \"selectedDay\": null,\n            \"selectedMonth\": null,\n            \"selectedYear\": null,\n            \"PassportNumber\": \"\",\n            \"PassportExpiryDate\": \"\",\n            \"PassportIssuingCountry\": \"IRQ\",\n            \"Nationality\": \"IN\",\n            \"CountryName\": \"\",\n            \"ContactNo\": \"9874563210\",\n            \"PhoneAreaCode\": \"+964\",\n            \"PhoneExtensionCode\": \"\",\n            \"City\": \"\",\n            \"PinCode\": \"\",\n            \"AddressLine1\": \"\",\n            \"AddressLine2\": \"\",\n            \"Email\": \"abc@gmail.com\",\n            \"travellerType\": \"adults\",\n            \"travellerTypeCount\": 1,\n            \"BaggageId\": [],\n            \"MealId\": [],\n            \"SeatId\": [],\n            \"SelectedSeats\": null,\n            \"SelectedSelectorId\": 0,\n            \"PassengerSelection\": \"\",\n            \"Address\": \"\",\n            \"Zipcode\": \"\",\n            \"PassportExpiry\": \"\"\n        }\n    ],\n    \"Remark\": \"CapitalSky B2C\",\n    \"PromoCode\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/search-flight/flight/90c7a99c-b2e2-43c2-ac8f-99b87a11c681",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"search-flight",
+								"flight",
+								"90c7a99c-b2e2-43c2-ac8f-99b87a11c681"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "search-flight(return)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json, text/plain, */*"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "en-GB,en-US;q=0.9,en;q=0.8"
+							},
+							{
+								"key": "Connection",
+								"value": "keep-alive"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Origin",
+								"value": "http://54.198.46.240"
+							},
+							{
+								"key": "Referer",
+								"value": "http://54.198.46.240/"
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"AdultCount\": 1,\n  \"ChildCount\": 0,\n  \"InfantCount\": 0,\n  \"JourneyType\": \"Return\",\n  \"PreferredAirlines\": [],\n  \"CabinClass\": \"Economy\",\n  \"Segments\": [\n    {\n      \"Origin\": \"HYD\",\n      \"Destination\": \"BLR\",\n      \"DepartureDate\": \"2025-11-12\",\n       \"ReturnDate\":\"2025-11-20\"\n    }\n  ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://54.198.46.240:6017/webservice/flight/search",
+							"protocol": "http",
+							"host": [
+								"54",
+								"198",
+								"46",
+								"240"
+							],
+							"port": "6017",
+							"path": [
+								"webservice",
+								"flight",
+								"search"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Fare-Qoute",
+			"item": [
+				{
+					"name": "fare-quote",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"7e1ef23a3d0549c47e43f50d335d06a0*_*22*_*5ZG0uGWDvSvMLC4l\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/fare-quote",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"fare-quote"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Commit-Booking",
+			"item": [
+				{
+					"name": "Commit-Booking",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"AppReference\": \"FB30-854721-5487547\",\n  \"SequenceNumber\": \"0\",\n  \"ResultToken\": \"b6d349f73f015cc746db4c8293e86d4a*_*130*_*9ab2u7OBVRXGl5FH\",\n  \"Passengers\": [\n    {\n      \"IsLeadPax\": \"1\",\n      \"Title\": \"Mr\",\n      \"FirstName\": \"Jeeva\",\n      \"LastName\": \"Vijay\",\n      \"Gender\": 1,\n      \"DateOfBirth\": \"2007-10-29\",\n      \"PaxType\": 1,\n      \"PassportNumber\": \"A1234567\",\n      \"PassportExpiry\": \"2030-12-31\",\n      \"PassportNationality\": \"IN\",\n      \"CountryCode\": \"IN\",\n      \"CountryName\": \"India\",\n      \"ContactNo\": \"8123573796\",\n      \"City\": \"Bangalore\",\n      \"PinCode\": \"560100\",\n      \"AddressLine1\": \"2nd Floor, Venkatadri IT Park, HP Avenue,, Konnappana Agrahara, Electronic city\",\n      \"Email\": \"balu.provab@gmail.com\"\n    }\n  ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/commit-booking/19e6f3d2-1da6-4fc3-9e58-d92eb97ada38",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"commit-booking",
+								"19e6f3d2-1da6-4fc3-9e58-d92eb97ada38"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
