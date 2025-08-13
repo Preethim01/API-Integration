@@ -1,27 +1,20 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+// src/farequote/farequote.service.ts
+import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class FareQuoteService {
-  constructor(
-    private readonly http: HttpService,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-  ) {}
+  constructor(private readonly http: HttpService) {}
 
-  formatFareQuote(raw: any) {
+  formatFareQuote(raw: any, customToken: string, providerResultToken: string) {
     const journey = raw?.UpdateFareQuote?.FareQuoteDetails?.JourneyList ?? null;
     const price = journey?.Price ?? null;
 
-    
-    const redisToken = uuidv4();
-
     return {
       Status: raw?.Status ?? 0,
-      Message: raw?.Message ?? "",
+      Message: raw?.Message ?? '',
       UpdateFareQuote: {
         FareQuoteDetails: {
           JourneyList: {
@@ -72,7 +65,7 @@ export class FareQuoteService {
               },
               PassengerBreakup: price?.PassengerBreakup ?? {},
             },
-            ResultToken: journey?.ResultToken ?? null,
+            ResultToken: providerResultToken,
             Attr: {
               IsRefundable: journey?.Attr?.IsRefundable ?? null,
               AirlineRemark: journey?.Attr?.AirlineRemark ?? null,
@@ -82,61 +75,42 @@ export class FareQuoteService {
               conditions: journey?.Attr?.conditions ?? null,
             },
             HoldTicket: journey?.HoldTicket ?? false,
-
-            redisToken, 
           },
         },
       },
+      customToken,
     };
   }
 
-async FetchFareQuoteFromApi(apiResultToken: string) {
-  console.log("Result token received:", apiResultToken);
-
-  try {
-    const apiRes = await firstValueFrom(
-      this.http.post(
-        'http://test.services.travelomatix.com/webservices/index.php/flight/service/UpdateFareQuote',
-        { ResultToken: apiResultToken },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-Username': 'test245274',
-            'x-Password': 'test@245',
-            'x-DomainKey': 'TMX3372451534825527',
-            'x-System': 'test',
+  async FetchFareQuoteFromApi(apiResultToken: string) {
+    try {
+      const apiRes = await firstValueFrom(
+        this.http.post(
+          'http://test.services.travelomatix.com/webservices/index.php/flight/service/UpdateFareQuote',
+          { ResultToken: apiResultToken },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'x-Username': 'test245274',
+              'x-Password': 'test@245',
+              'x-DomainKey': 'TMX3372451534825527',
+              'x-System': 'test',
+            },
           },
-        },
-      ),
-    );
+        ),
+      );
 
-    console.log("API Response:", apiRes.data);
+      const providerResultToken = apiRes.data?.UpdateFareQuote?.FareQuoteDetails?.JourneyList?.ResultToken;
+      const customToken = uuidv4();
+      const formatted = this.formatFareQuote(apiRes.data, customToken, providerResultToken);
 
-    const formatted = this.formatFareQuote(apiRes.data);
-
-    const key = formatted.UpdateFareQuote.FareQuoteDetails.JourneyList.redisToken;
-    const providerResultToken = formatted.UpdateFareQuote.FareQuoteDetails.JourneyList.ResultToken;
-
-    
-    await this.cacheManager.set(key, formatted, 36000);
-    await this.cacheManager.set(`${key}:providerToken`, providerResultToken, 36000);
-
-    return {
-      ...formatted,
-      ProviderResultToken: providerResultToken 
-    };
-
-  } catch (error) {
-    console.error("Error fetching fare quote:", error.response?.data || error.message);
-    throw error;
-  }
-}
-
-  
-  async GetByRedisToken(redisToken: string) {
-    const cleanToken = redisToken.trim();
-    const result = await this.cacheManager.get(cleanToken);
-    if (!result) throw new NotFoundException('FareQuote results not found for this token');
-    return result;
+      return {
+        ...formatted,
+        ProviderResultToken: providerResultToken,
+      };
+    } catch (error) {
+      console.error('Error fetching fare quote:', error.response?.data || error.message);
+      throw error;
+    }
   }
 }

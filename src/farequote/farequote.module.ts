@@ -1,14 +1,11 @@
+// src/farequote/farequote.module.ts
 import { Module } from '@nestjs/common';
-import { CacheModule } from '@nestjs/cache-manager';
 import { HttpModule } from '@nestjs/axios';
 import { FareQuoteService } from './farequote.service';
 import { FareQuoteController } from './farequote.controller';
 
 @Module({
-  imports: [
-    CacheModule.register(),
-    HttpModule,
-  ],
+  imports: [HttpModule],
   controllers: [FareQuoteController],
   providers: [FareQuoteService],
 })
