@@ -1,4 +1,4 @@
-// src/commit-booking/commit-booking.controller.ts
+
 import { Controller, Post, Body } from '@nestjs/common';
 import { CommitBookingService } from './commit-booking.service';
 
