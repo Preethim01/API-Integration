@@ -1,8 +1,8 @@
-
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
+import { AxiosError } from 'axios';
 
 @Injectable()
 export class FareQuoteService {
@@ -100,6 +100,15 @@ export class FareQuoteService {
         ),
       );
 
+      // Check if the response data is valid before proceeding
+      if (!apiRes || !apiRes.data) {
+        console.error('API response is empty or invalid.');
+        throw new Error('API response is empty or invalid.');
+      }
+
+      // Add a log to see the raw API response
+      console.log('Raw API Response:', JSON.stringify(apiRes.data, null, 2));
+
       const providerResultToken = apiRes.data?.UpdateFareQuote?.FareQuoteDetails?.JourneyList?.ResultToken;
       const customToken = uuidv4();
       const formatted = this.formatFareQuote(apiRes.data, customToken, providerResultToken);
@@ -109,7 +118,11 @@ export class FareQuoteService {
         ProviderResultToken: providerResultToken,
       };
     } catch (error) {
-      console.error('Error fetching fare quote:', error.response?.data || error.message);
+      if (error instanceof AxiosError) {
+        console.error('Axios error fetching fare quote:', error.response?.data || error.message);
+      } else {
+        console.error('General error fetching fare quote:', error.message);
+      }
       throw error;
     }
   }
