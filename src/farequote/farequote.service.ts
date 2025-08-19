@@ -100,13 +100,13 @@ export class FareQuoteService {
         ),
       );
 
-      // Check if the response data is valid before proceeding
+      
       if (!apiRes || !apiRes.data) {
         console.error('API response is empty or invalid.');
         throw new Error('API response is empty or invalid.');
       }
 
-      // Add a log to see the raw API response
+      
       console.log('Raw API Response:', JSON.stringify(apiRes.data, null, 2));
 
       const providerResultToken = apiRes.data?.UpdateFareQuote?.FareQuoteDetails?.JourneyList?.ResultToken;
@@ -127,3 +127,4 @@ export class FareQuoteService {
     }
   }
 }
+

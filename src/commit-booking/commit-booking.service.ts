@@ -82,7 +82,9 @@ export class CommitBookingService {
             'x-System': 'test',
           },
         }),
+        
       );
+    console.log('Raw API Response for CommitBooking:', JSON.stringify(response.data, null, 2));
 
       return this.formatBookingResponse(response.data);
     } catch (error) {
