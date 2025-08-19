@@ -1,24 +1,31 @@
-
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { AxiosError } from 'axios';
 
 @Injectable()
-export class CommitBookingService {
+export class BookingService {
+  private readonly travelomatixHeaders = {
+    'Content-Type': 'application/json',
+    'x-Username': 'test245274',
+    'x-Password': 'test@245',
+    'x-DomainKey': 'TMX3372451534825527',
+    'x-System': 'test',
+  };
+
   constructor(private readonly http: HttpService) {}
 
-  private formatBookingResponse(rawResponse: any) {
-    const bookingDetails = rawResponse?.CommitBooking?.BookingDetails;
+  private formatCommitBooking(raw: any) {
+    const bookingDetails = raw?.CommitBooking?.BookingDetails;
     if (!bookingDetails) {
       throw new InternalServerErrorException('Invalid response format from provider.');
     }
-
     const firstFlightSegment = bookingDetails.JourneyList.FlightDetails.Details[0][0];
     const passenger = bookingDetails.PassengerDetails[0];
     const priceBreakup = bookingDetails.Price.PriceBreakup;
 
     return {
-      Status: rawResponse.Status,
+      Status: raw.Status,
       Message: 'Booking confirmed',
       BookingDetails: {
         BookingId: bookingDetails.BookingId,
@@ -71,25 +78,13 @@ export class CommitBookingService {
   async commitBooking(payload: any) {
     try {
       const bookingApiUrl = 'http://test.services.travelomatix.com/webservices/index.php/flight/service/CommitBooking';
-
       const response = await firstValueFrom(
-        this.http.post(bookingApiUrl, payload, {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-Username': 'test245274',
-            'x-Password': 'test@245',
-            'x-DomainKey': 'TMX3372451534825527',
-            'x-System': 'test',
-          },
-        }),
-        
+        this.http.post(bookingApiUrl, payload, { headers: this.travelomatixHeaders }),
       );
-    console.log('Raw API Response for CommitBooking:', JSON.stringify(response.data, null, 2));
-
-      return this.formatBookingResponse(response.data);
+      return this.formatCommitBooking(response.data);
     } catch (error) {
       console.error('CommitBooking error:', error.response?.data || error.message);
-      throw new InternalServerErrorException(error.response?.data || error.message);
+      throw new InternalServerErrorException(error.response?.data?.Message || 'Failed to commit booking.');
     }
   }
 }
