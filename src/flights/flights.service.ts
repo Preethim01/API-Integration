@@ -33,27 +33,23 @@ export class FlightsService {
       }
       return response.data;
     } catch (error) {
-  // Log the entire error object for detailed information
+
   console.error(`API call to ${endpoint} failed:`, error);
   throw new InternalServerErrorException('An error occurred while communicating with the flight API.');
 }
   }
 
-  // Your existing formatting methods remain excellent and should be kept as-is
-  // formatLocation, formatFlightSegment, formatPrice, generateSecureKey, etc.
 
-  // ... (Paste your formatting methods here) ...
-  // All the private methods from your code are perfect and don't need changes.
 
   private formatLocation(rawLocation: any) {
     if (!rawLocation) return null;
     return {
-      AirportCode: rawLocation.AirportCode ?? null,
-      CityName: rawLocation.CityName ?? null,
-      AirportName: rawLocation.AirportName ?? null,
-      DateTime: rawLocation.DateTime ?? null,
-      Terminal: rawLocation.Terminal ?? null,
-      FDTV: rawLocation.FDTV ?? null,
+      AirportCode: rawLocation.AirportCode ?? '',
+      CityName: rawLocation.CityName ?? '',
+      AirportName: rawLocation.AirportName ?? '',
+      DateTime: rawLocation.DateTime ?? '',
+      Terminal: rawLocation.Terminal ?? '',
+      FDTV: rawLocation.FDTV ?? '',
     };
   }
 
@@ -62,14 +58,14 @@ export class FlightsService {
     return {
       Origin: this.formatLocation(rawSegment.Origin),
       Destination: this.formatLocation(rawSegment.Destination),
-      OperatorCode: rawSegment.OperatorCode ?? null,
-      OperatorName: rawSegment.OperatorName ?? null,
-      FlightNumber: rawSegment.FlightNumber ?? null,
-      Duration: rawSegment.Duration ? Number(rawSegment.Duration) : null,
-      CabinClass: rawSegment.CabinClass ?? null,
+      OperatorCode: rawSegment.OperatorCode ?? '',
+      OperatorName: rawSegment.OperatorName ?? '',
+      FlightNumber: rawSegment.FlightNumber ?? '',
+      Duration: rawSegment.Duration ? Number(rawSegment.Duration) : 0,
+      CabinClass: rawSegment.CabinClass ?? '',
       Attr: {
-        Baggage: rawSegment.Attr?.Baggage ?? null,
-        CabinBaggage: rawSegment.Attr?.CabinBaggage ?? null,
+        Baggage: rawSegment.Attr?.Baggage ?? '',
+        CabinBaggage: rawSegment.Attr?.CabinBaggage ?? '',
         AvailableSeats: rawSegment.Attr?.AvailableSeats ? Number(rawSegment.Attr.AvailableSeats) : null,
       },
       stop_over: rawSegment.stop_over ?? null,
@@ -82,20 +78,20 @@ export class FlightsService {
     const passengerBreakup = rawPrice.PassengerBreakup ?? {};
 
     return {
-      Currency: rawPrice.Currency ?? null,
-      TotalDisplayFare: rawPrice.TotalDisplayFare ? Number(rawPrice.TotalDisplayFare) : null,
+      Currency: rawPrice.Currency ?? '',
+      TotalDisplayFare: rawPrice.TotalDisplayFare ? Number(rawPrice.TotalDisplayFare) : '',
       PriceBreakup: {
-        BasicFare: priceBreakup.BasicFare ? Number(priceBreakup.BasicFare) : null,
-        Tax: priceBreakup.Tax ? Number(priceBreakup.Tax) : null,
-        AgentCommission: priceBreakup.AgentCommission ? Number(priceBreakup.AgentCommission) : null,
-        AgentTdsOnCommision: priceBreakup.AgentTdsOnCommision ? Number(priceBreakup.AgentTdsOnCommision) : null,
+        BasicFare: priceBreakup.BasicFare ? Number(priceBreakup.BasicFare) : 0,
+        Tax: priceBreakup.Tax ? Number(priceBreakup.Tax) : 0,
+        AgentCommission: priceBreakup.AgentCommission ? Number(priceBreakup.AgentCommission) : 0,
+        AgentTdsOnCommision: priceBreakup.AgentTdsOnCommision ? Number(priceBreakup.AgentTdsOnCommision) : 0,
       },
       PassengerBreakup: {
         ADT: {
-          BasePrice: passengerBreakup.ADT?.BasePrice ? Number(passengerBreakup.ADT?.BasePrice) : null,
-          Tax: passengerBreakup.ADT?.Tax ? Number(passengerBreakup.ADT?.Tax) : null,
-          TotalPrice: passengerBreakup.ADT?.TotalPrice ? Number(passengerBreakup.ADT?.TotalPrice) : null,
-          PassengerCount: passengerBreakup.ADT?.PassengerCount ? Number(passengerBreakup.ADT?.PassengerCount) : null,
+          BasePrice: passengerBreakup.ADT?.BasePrice ? Number(passengerBreakup.ADT?.BasePrice) : 0,
+          Tax: passengerBreakup.ADT?.Tax ? Number(passengerBreakup.ADT?.Tax) : 0,
+          TotalPrice: passengerBreakup.ADT?.TotalPrice ? Number(passengerBreakup.ADT?.TotalPrice) : 0,
+          PassengerCount: passengerBreakup.ADT?.PassengerCount ? Number(passengerBreakup.ADT?.PassengerCount) : 0,
         },
       },
     };
