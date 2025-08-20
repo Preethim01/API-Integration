@@ -1,19 +1,13 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { CacheModule } from '@nestjs/cache-manager';
-import { FlightsService } from './search-flight.service';
 import { FlightsController } from './flights.controller';
-import {FareQuoteService} from './fare-quote.service';
-import { BookingService } from './booking.service';
+import { FlightsService } from './flights.service';
+import { HttpModule } from '@nestjs/axios'; // Add this import
 
 @Module({
   imports: [
-    HttpModule,
-    CacheModule.register({
-      ttl: 3600 * 1000, // 1 hour cache TTL in milliseconds
-    }),
+    HttpModule // Add this line to the imports array
   ],
-  providers: [FlightsService,FareQuoteService,BookingService],
   controllers: [FlightsController],
+  providers: [FlightsService],
 })
 export class FlightsModule {}
