@@ -1,188 +1,283 @@
-import { Injectable, Inject, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+
 import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config'; // Import ConfigService
+
 import { firstValueFrom } from 'rxjs';
+
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+
 import type { Cache } from 'cache-manager';
-import { v4 as uuidv4 } from 'uuid';
-import * as crypto from 'crypto';
+
+const SECRET = 'SECRET'; // 🔐 Replace with a strong secret
 
 @Injectable()
 export class FlightsService {
+  private baseUrl =
+    'http://test.services.travelomatix.com/webservices/index.php/flight/service/';
+
+  private headers = {
+    'Content-Type': 'application/json',
+
+    'x-Username': 'test245274',
+
+    'x-Password': 'test@245',
+
+    'x-DomainKey': 'TMX3372451534825527',
+
+    'x-System': 'test',
+  };
+
   constructor(
     private readonly http: HttpService,
-    private readonly configService: ConfigService, // Inject ConfigService
+
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-  ) { }
+  ) {}
+
+  // ----------------- API CALL -----------------
 
   private async callApi(endpoint: string, payload: any): Promise<any> {
-    const url = `${this.configService.get<string>('TMX_BASE_URL')}/${endpoint}`;
-      console.log('TMX_BASE_URL:', url);
-    const headers = {
-      'Content-Type': 'application/json',
-      'x-Username': this.configService.get<string>('TMX_USERNAME'),
-      'x-Password': this.configService.get<string>('TMX_PASSWORD'),
-      'x-DomainKey': this.configService.get<string>('TMX_DOMAINKEY'),
-      'x-System': this.configService.get<string>('TMX_SYSTEM'),
-    };
     try {
+      const url = `${this.baseUrl}${endpoint}`;
+
       const response = await firstValueFrom(
-        this.http.post(url, payload, { headers }),
+        this.http.post(url, payload, { headers: this.headers }),
       );
+
       if (response?.data?.Status !== 1) {
-        throw new InternalServerErrorException(`API Error: ${response?.data?.Message ?? 'Request failed.'}`);
+        throw new NotFoundException(
+          `API Error: ${response?.data?.Message ?? 'Request failed.'}`,
+        );
       }
+
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      console.error(`API call to ${endpoint} failed:`, error.message);
 
-  console.error(`API call to ${endpoint} failed:`, error);
-  
-  throw new InternalServerErrorException('An error occurred while communicating with the flight API.');
-}
+      throw new NotFoundException('Error communicating with flight API.');
+    }
   }
 
+  // ----------------- HELPERS -----------------
 
+  private formatLocation(raw: any) {
+    if (!raw) return null;
 
-  private formatLocation(rawLocation: any) {
-    if (!rawLocation) return null;
     return {
-      AirportCode: rawLocation.AirportCode ?? '',
-      CityName: rawLocation.CityName ?? '',
-      AirportName: rawLocation.AirportName ?? '',
-      DateTime: rawLocation.DateTime ?? '',
-      Terminal: rawLocation.Terminal ?? '',
-      FDTV: rawLocation.FDTV ?? '',
+      AirportCode: raw.AirportCode ?? '',
+
+      CityName: raw.CityName ?? '',
+
+      AirportName: raw.AirportName ?? '',
+
+      DateTime: raw.DateTime ?? '',
+
+      Terminal: raw.Terminal ?? '',
+
+      FDTV: raw.FDTV ?? '',
     };
   }
 
-  private formatFlightSegment(rawSegment: any) {
-    if (!rawSegment) return null;
+  private formatFlightSegment(raw: any) {
+    if (!raw) return null;
+
     return {
-      Origin: this.formatLocation(rawSegment.Origin),
-      Destination: this.formatLocation(rawSegment.Destination),
-      OperatorCode: rawSegment.OperatorCode ?? '',
-      OperatorName: rawSegment.OperatorName ?? '',
-      FlightNumber: rawSegment.FlightNumber ?? '',
-      Duration: rawSegment.Duration ? Number(rawSegment.Duration) : 0,
-      CabinClass: rawSegment.CabinClass ?? '',
+      Origin: this.formatLocation(raw.Origin),
+
+      Destination: this.formatLocation(raw.Destination),
+
+      OperatorCode: raw.OperatorCode ?? '',
+
+      OperatorName: raw.OperatorName ?? '',
+
+      FlightNumber: raw.FlightNumber ?? '',
+
+      Duration: raw.Duration ? Number(raw.Duration) : 0,
+
+      CabinClass: raw.CabinClass ?? '',
+
       Attr: {
-        Baggage: rawSegment.Attr?.Baggage ?? '',
-        CabinBaggage: rawSegment.Attr?.CabinBaggage ?? '',
-        AvailableSeats: rawSegment.Attr?.AvailableSeats ? Number(rawSegment.Attr.AvailableSeats) : null,
+        Baggage: raw.Attr?.Baggage ?? '',
+
+        CabinBaggage: raw.Attr?.CabinBaggage ?? '',
+
+        AvailableSeats: raw.Attr?.AvailableSeats
+          ? Number(raw.Attr?.AvailableSeats)
+          : null,
       },
-      stop_over: rawSegment.stop_over ?? null,
+
+      stop_over: raw.stop_over ?? null,
     };
   }
 
-  private formatPrice(rawPrice: any) {
-    if (!rawPrice) return null;
-    const priceBreakup = rawPrice.PriceBreakup ?? {};
-    const passengerBreakup = rawPrice.PassengerBreakup ?? {};
+  private formatPrice(raw: any) {
+    if (!raw) return null;
+
+    const priceBreakup = raw.PriceBreakup ?? {};
+
+    const passengerBreakup = raw.PassengerBreakup ?? {};
 
     return {
-      Currency: rawPrice.Currency ?? '',
-      TotalDisplayFare: rawPrice.TotalDisplayFare ? Number(rawPrice.TotalDisplayFare) : '',
+      Currency: raw.Currency ?? '',
+
+      TotalDisplayFare: raw.TotalDisplayFare ? Number(raw.TotalDisplayFare) : 0,
+
       PriceBreakup: {
         BasicFare: priceBreakup.BasicFare ? Number(priceBreakup.BasicFare) : 0,
+
         Tax: priceBreakup.Tax ? Number(priceBreakup.Tax) : 0,
-        AgentCommission: priceBreakup.AgentCommission ? Number(priceBreakup.AgentCommission) : 0,
-        AgentTdsOnCommision: priceBreakup.AgentTdsOnCommision ? Number(priceBreakup.AgentTdsOnCommision) : 0,
+
+        AgentCommission: priceBreakup.AgentCommission
+          ? Number(priceBreakup.AgentCommission)
+          : 0,
+
+        AgentTdsOnCommision: priceBreakup.AgentTdsOnCommision
+          ? Number(priceBreakup.AgentTdsOnCommision)
+          : 0,
       },
+
       PassengerBreakup: {
         ADT: {
-          BasePrice: passengerBreakup.ADT?.BasePrice ? Number(passengerBreakup.ADT?.BasePrice) : 0,
-          Tax: passengerBreakup.ADT?.Tax ? Number(passengerBreakup.ADT?.Tax) : 0,
-          TotalPrice: passengerBreakup.ADT?.TotalPrice ? Number(passengerBreakup.ADT?.TotalPrice) : 0,
-          PassengerCount: passengerBreakup.ADT?.PassengerCount ? Number(passengerBreakup.ADT?.PassengerCount) : 0,
+          BasePrice: passengerBreakup.ADT?.BasePrice
+            ? Number(passengerBreakup.ADT.BasePrice)
+            : 0,
+
+          Tax: passengerBreakup.ADT?.Tax ? Number(passengerBreakup.ADT.Tax) : 0,
+
+          TotalPrice: passengerBreakup.ADT?.TotalPrice
+            ? Number(passengerBreakup.ADT.TotalPrice)
+            : 0,
+
+          PassengerCount: passengerBreakup.ADT?.PassengerCount
+            ? Number(passengerBreakup.ADT.PassengerCount)
+            : 0,
         },
       },
     };
   }
 
+  // ----------------- TOKEN -----------------
 
-  private generateSecureKey(apiToken: string): string {
-    return crypto.createHash('sha256').update(apiToken).digest('hex');
+  private encryptToken(resultToken: string): string {
+    return Buffer.from(`${SECRET}|${resultToken}`).toString('base64');
   }
 
+  private decryptToken(encryptedToken: string): string {
+    try {
+      const decoded = Buffer.from(encryptedToken, 'base64').toString('utf8');
 
-  private formatAsJourneyList(raw: any) {
-    const journeys: any[] = raw?.Search?.FlightDataList?.JourneyList || [];
-    const formattedJourneys = journeys.map((journey) =>
-      journey.map((flight) => {
+      const parts = decoded.split('|');
 
-        if (!flight?.ResultToken) {
-          throw new NotFoundException('Missing mandatory ResultToken from API response.');
-        }
-        const internalKey = this.generateSecureKey(flight.ResultToken);
+      if (parts[0] !== SECRET) throw new Error('Invalid token');
 
-        return {
-          FlightDetails: {
-            Details: (flight?.FlightDetails?.Details ?? []).map(
-              (FlightStops: any[]) =>
-                FlightStops.map(this.formatFlightSegment.bind(this)),
-            ),
-          },
-
-          Price: this.formatPrice(flight.Price),
-          Attr: flight.Attr ?? {},
-          
-          internalKey: internalKey,
-        };
-      }),
-    );
-
-    return {
-      Status: raw?.Status ?? null,
-      Message: raw?.Message ?? '',
-      Search: {
-        FlightDataList: {
-          JourneyList: formattedJourneys,
-        },
-      },
-    };
-  }
-
-  private formatFareQuote(raw: any) {
-    const journey = raw?.UpdateFareQuote?.FareQuoteDetails?.JourneyList ?? null;
-    if (!journey || !journey.ResultToken) {
-      throw new NotFoundException('Missing mandatory journey details from API response.');
+      return parts[1];
+    } catch {
+      throw new BadRequestException('Invalid or expired token');
     }
-
-    return {
-      Status: raw?.Status ?? 0,
-      Message: raw?.Message ?? "",
-      UpdateFareQuote: {
-        FareQuoteDetails: {
-          JourneyList: {
-            FlightDetails: {
-              Details: (journey?.FlightDetails?.Details ?? []).map((flightArray: any[]) =>
-                flightArray.map(this.formatFlightSegment.bind(this))
-              ),
-            },
-
-            Price: this.formatPrice(journey.Price),
-            ResultToken: journey.ResultToken,
-            Attr: journey.Attr ?? {},
-            HoldTicket: journey.HoldTicket ?? false,
-          },
-        },
-      },
-    };
   }
+
+  // ----------------- SEARCH FLIGHTS -----------------
 
   public async searchFlights(payload: any) {
     const apiResponse = await this.callApi('Search', payload);
-    const formatted = this.formatAsJourneyList(apiResponse);
 
-    for (const journey of formatted.Search.FlightDataList.JourneyList.flat()) {
-      await this.cacheManager.set(journey.internalKey, journey, 3600);
-    }
+    const journeys: any[] =
+      apiResponse?.Search?.FlightDataList?.JourneyList || [];
 
-    return formatted;
+    const formattedJourneys = await Promise.all(
+      journeys.map(async (journey) =>
+        Promise.all(
+          journey.map(async (flight) => {
+            const encryptedToken = this.encryptToken(flight.ResultToken);
+
+            const formattedFlight = {
+              FlightDetails: {
+                Details: (flight.FlightDetails?.Details ?? []).map(
+                  (FlightStops: any[]) =>
+                    FlightStops.map(this.formatFlightSegment.bind(this)),
+                ),
+              },
+
+              Price: this.formatPrice(flight.Price),
+
+              Attr: flight.Attr ?? {},
+
+              token: encryptedToken,
+            };
+
+            // Store flight in Redis for 1 hour
+
+            await this.cacheManager.set(encryptedToken, formattedFlight, {
+              ttl: 3600,
+            } as any);
+
+            return formattedFlight;
+          }),
+        ),
+      ),
+    );
+
+    return {
+      Status: apiResponse?.Status ?? null,
+
+      Message: apiResponse?.Message ?? '',
+
+      Search: { FlightDataList: { JourneyList: formattedJourneys } },
+    };
   }
 
-  public async FetchFareQuote(resultToken: string) {
-    const apiRes = await this.callApi('UpdateFareQuote', resultToken);
-    return this.formatFareQuote(apiRes);
+  // ----------------- FARE QUOTE -----------------
+
+  public async getFareQuote(token: string) {
+  
+
+    const resultToken = this.decryptToken(token);
+
+    // 3️⃣ Call farequote API
+console.log(resultToken);
+
+    const apiResponse = await this.callApi('UpdateFareQuote', {
+      ResultToken: resultToken,
+    });
+console.log(apiResponse);
+
+    const journey =
+      apiResponse?.UpdateFareQuote?.FareQuoteDetails?.JourneyList ?? null;
+
+    if (!journey)
+      throw new NotFoundException('Missing journey details from API');
+
+    // 4️⃣ Format journey details
+
+    const formattedJourney = {
+      FlightDetails: {
+        Details: (journey.FlightDetails?.Details ?? []).map(
+          (flightArray: any[]) =>
+            flightArray.map(this.formatFlightSegment.bind(this)),
+        ),
+      },
+
+      Price: this.formatPrice(journey.Price),
+
+      Attr: journey.Attr ?? {},
+
+      HoldTicket: journey.HoldTicket ?? false,
+    };
+
+    return {
+      Status: apiResponse?.Status ?? 0,
+
+      Message: apiResponse?.Message ?? '',
+
+      UpdateFareQuote: {
+        FareQuoteDetails: {
+          JourneyList: formattedJourney,
+        },
+      },
+    };
   }
 }
