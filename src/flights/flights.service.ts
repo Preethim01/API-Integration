@@ -1,18 +1,18 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
+import { SearchFlightDto } from './dto/search-flight.dto';
+import { CommitBookingDto } from './dto/commit-booking.dto';
+import { v4 as uuid4 } from 'uuid';
 import {
   formatAsJourneyList,
   formatFareQuote,
-  createAccessToken,
-  decodeAccessToken,
+  formatBooking,
+  Encryption,
+  Decryption,
+  GenerateAppRefernce,
 } from './flight-formatter';
 
 @Injectable()
@@ -32,6 +32,7 @@ export class FlightsService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
+  /** Generic API Call */
   private async callApi(endpoint: string, payload: any): Promise<any> {
     try {
       const url = `${this.baseUrl}${endpoint}`;
@@ -53,33 +54,76 @@ export class FlightsService {
   }
 
   /** 🔍 Search Flights */
-  public async searchFlights(payload: any) {
+  public async searchFlights(payload: SearchFlightDto) {
     const apiResponse = await this.callApi('Search', payload);
     const formatted = formatAsJourneyList(apiResponse);
 
-    // cache each journey with its ResultToken
-    formatted.Search.FlightDataList.JourneyList.forEach(journey =>
-      journey.forEach(async flight => {
-        await this.cacheManager.set(flight.ResultToken, flight, {
-          ttl: 3600,
-        } as any);
-      }),
-    );
+    // Cache each journey with encrypted ResultToken
+    for (const journey of formatted.Search.FlightDataList.JourneyList.flat()) {
+      const encryptedToken = Encryption(journey.ResultToken);
+      journey.ResultToken = encryptedToken; // store encrypted token
+      await this.cacheManager.set(encryptedToken, journey, { ttl: 3600 } as any);
+    }
 
     return formatted;
   }
 
   /** 💰 Fetch FareQuote */
-  public async getFareQuote(payload: { ResultToken: string }) {
-    const tokenString = payload.ResultToken;
-    const decodedToken = decodeAccessToken(tokenString);
+  public async FetchFareQuote(payload:any) {
+    //const decryptedToken = Decryption(payload.ResultToken);
+    //console.log(decryptedToken);
+    
 
-    const apiRes = await this.callApi('UpdateFareQuote', {
-      ResultToken: decodedToken,
-    });
+    // const apiRes = await this.callApi('UpdateFareQuote', 
+    //   payload
+    // );
 
-    const formatted = formatFareQuote(apiRes);
+    const response=await firstValueFrom(
+      this.http.post("http://test.services.travelomatix.com/webservices/index.php/flight/service/UpdateFareQuote", payload, { headers: this.headers })
 
-    return formatted;
+    )
+     return formatFareQuote(response.data);
+    //return formatFareQuote(apiRes);
+  }
+
+  /** 📑 Commit Booking */
+  public async CommitBooking(payload: CommitBookingDto) {
+    const decryptedToken = Decryption(payload.ResultToken);
+
+    const updatedPayload = {
+      ...payload,
+      ResultToken: decryptedToken,
+    };
+
+    const apiResponse = await this.callApi('CommitBooking', updatedPayload);
+
+    return formatBooking(apiResponse, 'CommitBooking');
+  }
+
+  /** 🛑 Hold Ticket */
+  public async HoldTicket(payload: CommitBookingDto) {
+    const decryptedToken = Decryption(payload.ResultToken);
+
+    const updatedPayload = {
+      ...payload,
+      ResultToken: decryptedToken,
+    };
+
+    const apiResponse = await this.callApi('HoldTicket', updatedPayload);
+
+    return formatBooking(apiResponse, 'HoldTicket');
+  }
+
+  /** 🔑 Generate App Reference */
+  public GenerateAppRefernce() {
+    return GenerateAppRefernce();
+  }
+
+  /** 🔍 Get flight by cached token */
+  public async getByToken(token: string) {
+    const cleanToken = token.trim();
+    const result = await this.cacheManager.get(cleanToken);
+    if (!result) throw new NotFoundException('Result not found for this token');
+    return result;
   }
 }
