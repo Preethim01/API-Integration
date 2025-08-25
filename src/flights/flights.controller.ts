@@ -14,6 +14,7 @@ export class FlightsController {
 @Post('farequote')
 @UsePipes(new ValidationPipe())
 async getFareQuote(@Body() body: GetFareQuoteDto) {
-  return this.flightsService.getFareQuote(body.token);
+  return this.flightsService.getFareQuote({ ResultToken: body.ResultToken });
 }
+
 }
