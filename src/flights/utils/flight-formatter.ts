@@ -19,7 +19,7 @@ function formatDynamic(obj: any): any {
         for (const key in obj) {
             const value = obj[key];
             if (Array.isArray(value) || typeof value === 'object') {
-                formatted[key] = formatDynamic(value); // recursion for nested objects/arrays
+                formatted[key] = formatDynamic(value); 
             } else if (isNumeric(value)) {
                 formatted[key] = Number(value);
             } else if (typeof value === 'string') {
@@ -37,7 +37,7 @@ function formatDynamic(obj: any): any {
 }
 
 
-function GenerateShortToken(): string {
+function Generatehashtoken(): string {
     return crypto.randomBytes(12).toString("hex");
 }
 
@@ -46,16 +46,16 @@ export function formatAsJourneyList(raw: any) {
     const formattedJourneys = journeys.map(journey =>
         journey.map(flight => {
             if (!flight?.ResultToken) {
-                throw new Error('Missing mandatory ResultToken from API response.');
+                throw new Error('Missing ResultToken');
             }
             const originalResultToken = flight.ResultToken;
-            const shortToken = GenerateShortToken();
+            const hashtoken = Generatehashtoken();
 
             const clientObj = {
                 FlightDetails: formatDynamic(flight.FlightDetails),
                 Price: formatDynamic(flight.Price),
                 Attr: formatDynamic(flight.Attr ?? {}),
-                ResultToken: shortToken,
+                ResultToken: hashtoken,
             };
 
             const cacheObj = {
@@ -94,11 +94,11 @@ export async function formatFareQuote(raw: any) {
 
     const journey = raw?.UpdateFareQuote?.FareQuoteDetails?.JourneyList ?? null;
     if (!journey || !journey.ResultToken) {
-        throw new Error('Missing mandatory journey details from API response.');
+        throw new Error('Missing journey details');
     }
 
     const OriginalResultToken = journey.ResultToken;
-    const shortToken = GenerateShortToken();
+    const hashtoken = Generatehashtoken();
 
     const response = {
         Status: raw?.Status ?? false,
@@ -109,7 +109,7 @@ export async function formatFareQuote(raw: any) {
                     FlightDetails: formatDynamic(journey.FlightDetails),
                     Price: formatDynamic(journey.Price),
                     Attr: formatDynamic(journey.Attr ?? {}),
-                    ResultToken: shortToken,
+                    ResultToken: hashtoken,
                     HoldTicket: journey.HoldTicket ?? false,
                 }
             }
@@ -148,20 +148,7 @@ export function formatBooking(raw: any, type: 'CommitBooking' | 'HoldTicket') {
 
 
 
-//generating Access key
 
-
-
-export function createAccessToken(apiResultToken: string): string {
-    return Buffer.from(`${apiResultToken}`).toString('base64').replace('/=/g', '');
-}
-
-
-
-export function decodeAccessToken(accessToken: string): string {
-    const decoded = Buffer.from(accessToken, 'base64').toString('utf8');
-    return decoded;
-}
 
 
 

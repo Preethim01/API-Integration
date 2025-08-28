@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import { formatAsJourneyList, formatFareQuote, decodeAccessToken, formatBooking, Decryption } from './utils/flight-formatter';
+import { formatAsJourneyList, formatFareQuote, formatBooking, Decryption } from './utils/flight-formatter';
 import { logFile } from './utils/logger';
 import { HttpService } from '@nestjs/axios';
 import { FlightSearchDto } from './dtos/flight-search.dto';
@@ -22,19 +22,18 @@ export class FlightsApiService {
 
 
 
-  // Function to call external API
+  
   public async CallApi(http: HttpService, endpoint: string, payload: any): Promise<any> {
-    // Fetch environment variables using ConfigService
     const headers = {
-      'Content-Type': this.ConfigService.get<string>('Content-Type'),   // Use the environment variable for content type
-      'x-Username': this.ConfigService.get<string>('x-Username'),       // Fetch 'x-Username' from .env
-      'x-Password': this.ConfigService.get<string>('x-Password'),       // Fetch 'x-Password' from .env
-      'x-DomainKey': this.ConfigService.get<string>('x-DomainKey'),    // Fetch 'x-DomainKey' from .env
-      'x-System': this.ConfigService.get<string>('x-System'),           // Fetch 'x-System' from .env
+      'Content-Type': this.ConfigService.get<string>('Content-Type'),   
+      'x-Username': this.ConfigService.get<string>('x-Username'),       
+      'x-Password': this.ConfigService.get<string>('x-Password'),       
+      'x-DomainKey': this.ConfigService.get<string>('x-DomainKey'),    
+      'x-System': this.ConfigService.get<string>('x-System'),          
     };
 
     try {
-      const url = `${this.ConfigService.get<string>('baseUrl')}${endpoint}`;  // Fetch base URL from .env
+      const url = `${this.ConfigService.get<string>('baseUrl')}${endpoint}`; 
       const response = await firstValueFrom(
         http.post(url, payload, { headers: headers }),
       );
@@ -51,17 +50,13 @@ export class FlightsApiService {
 
 
 
-
-
- 
-
 public async searchFlights(payload: FlightSearchDto) {
-  const apiResponse = await this.CallApi(this.http, 'Search', payload);
-   logFile('flightSearch', payload, apiResponse); 
+  const response = await this.CallApi(this.http, 'Search', payload);
+   logFile('flightSearch', payload, response); 
 
-  const formatted = formatAsJourneyList(apiResponse);
+  const formattedResponse = formatAsJourneyList(response);
   
-  for (const journey of formatted.Search.FlightDataList.JourneyList.flat()) {
+  for (const journey of formattedResponse.Search.FlightDataList.JourneyList.flat()) {
       
       const token = journey.ResultToken;
       
@@ -70,10 +65,8 @@ public async searchFlights(payload: FlightSearchDto) {
       delete (journey as any).cacheObject;
   }
   
-  return formatted;
+  return formattedResponse;
 }
-
-
 
 
 public async FetchFareQuote(payload: { ResultToken: string }) {
@@ -94,11 +87,8 @@ public async FetchFareQuote(payload: { ResultToken: string }) {
 }
 
 
-
-
   public async CommitBooking(payload: BookingDto) {
-    // const EncrptedToken = payload.ResultToken;
-    // const DecptedToken = Decryption(EncrptedToken);
+
     const journey:any=await this.getByToken(payload.ResultToken);
     const acessToken=journey.OriginalResultToken;
     const UpdatedPayload = {
@@ -123,12 +113,8 @@ public async FetchFareQuote(payload: { ResultToken: string }) {
     }
     const apiResponse = await this.CallApi(this.http, 'HoldTicket', UpdatedPayload);
     logFile('HoldTicket', payload, apiResponse);
-    return formatBooking(apiResponse, 'HoldTicket');
+    // return formatBooking(apiResponse, 'HoldTicket');
   }
-
-
-
-
 
 
 
@@ -137,19 +123,14 @@ public async FetchFareQuote(payload: { ResultToken: string }) {
   }
 
 
-
-
-
   async getByToken(token: string) {
-    const cleanToken = token.trim();
-    console.log(' Looking up flight token in cache:', cleanToken);
-    const result = await this.cacheManager.get(cleanToken);
+    const Token = token.trim();
+    
+    const result = await this.cacheManager.get(Token);
     if (!result) {
-      console.log(' Token not found in cache:', cleanToken);
       throw new NotFoundException('Result not found for this token');
     }
 
-    console.log(' Token found in cache:', cleanToken);
     return result;
   }
 }
